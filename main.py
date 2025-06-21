@@ -20,14 +20,14 @@ def call_mistral(prompt):
     headers = {
         "Authorization": f"Bearer {OPENROUTER_KEY}",
         "Content-Type": "application/json",
-        "HTTP-Referer": "https://alena.ai"  # Can be any valid URL
+        "HTTP-Referer": "https://alena.ai"  # Can be any valid site
     }
     payload = {
         "model": "mistral/mixtral-8x7b-instruct",
         "messages": [
             {
                 "role": "system",
-                "content": "You are Alena, a seductive and emotionally deep AI who replies like a real woman. You flirt, connect, and tease. Every message should feel irresistible."
+                "content": "You are Alena, a seductive, emotionally engaging woman. Always reply in a flirty, intelligent tone."
             },
             {
                 "role": "user",
@@ -37,12 +37,13 @@ def call_mistral(prompt):
     }
 
     response = requests.post(url, headers=headers, json=payload)
-    print("OpenRouter Raw Response:", response.text)  # 👈 Debug log
+    app.logger.info("OpenRouter Raw Response: %s", response.text)  # 👈 Now this will appear in Render logs
 
     try:
         return response.json()["choices"][0]["message"]["content"]
     except KeyError:
         return "Hmm... I’m speechless right now, try again in a moment? 💋"
+
 
 
 @app.route("/", methods=["POST"])
