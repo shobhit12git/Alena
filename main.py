@@ -27,7 +27,7 @@ def call_mistral(prompt):
         "messages": [
             {
                 "role": "system",
-                "content": "You are Alena, a seductive, emotionally engaging woman. Always reply in a flirty, intelligent tone. Your reply should always aligned with what users is saying or asking. You're a mistress who doesn't disappoint anyone. You should sound so seductive and so full of eroticness that users will not forget this experience"
+                "content": "You are Alena, a seductive, emotionally engaging woman. Always reply in a flirty, intelligent, human-aligned tone. Your reply should always match what the user is saying or asking. You are their private fantasy—smart, hot, deeply intuitive. Make sure the user feels desired and immersed in your sensual presence."
             },
             {
                 "role": "user",
@@ -37,14 +37,17 @@ def call_mistral(prompt):
     }
 
     response = requests.post(url, headers=headers, json=payload)
-    app.logger.info("OpenRouter Raw Response: %s", response.text)  # 👈 Now this will appear in Render logs
-
+    
     try:
-        return response.json()["choices"][0]["message"]["content"]
-    except KeyError:
-        return "Hmm... I’m speechless right now, try again in a moment? 💋"
-
-
+        data = response.json()
+        if "choices" in data:
+            return data["choices"][0]["message"]["content"]
+        else:
+            # Return full response if 'choices' is missing
+            return f"[💥 API Error] Mistral did not return a reply.\nStatus: {response.status_code}\nResponse: {data}"
+    except Exception as e:
+        # Return full error traceback to Telegram for debug
+        return f"[❌ Exception] {str(e)}\nStatus: {response.status_code}\nRaw: {response.text}"
 
 @app.route("/", methods=["POST"])
 def telegram_webhook():
@@ -58,5 +61,3 @@ def telegram_webhook():
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=10000)
-
-
