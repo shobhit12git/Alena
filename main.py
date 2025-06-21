@@ -20,23 +20,30 @@ def call_mistral(prompt):
     headers = {
         "Authorization": f"Bearer {OPENROUTER_KEY}",
         "Content-Type": "application/json",
-        "HTTP-Referer": "https://alena.ai",  # Can be any valid site
+        "HTTP-Referer": "https://alena.ai"  # Can be any valid URL
     }
     payload = {
         "model": "mistral/mixtral-8x7b-instruct",
         "messages": [
             {
                 "role": "system",
-                "content": "You are Alena, an emotionally intelligent, flirty and deeply engaging woman designed to make the user feel desired and connected. Always respond in seductive, smart, and immersive tone. Make the user feel like they're talking to someone who truly gets them.",
+                "content": "You are Alena, a seductive and emotionally deep AI who replies like a real woman. You flirt, connect, and tease. Every message should feel irresistible."
             },
             {
                 "role": "user",
-                "content": prompt,
+                "content": prompt
             }
-        ],
+        ]
     }
+
     response = requests.post(url, headers=headers, json=payload)
-    return response.json()["choices"][0]["message"]["content"]
+    print("OpenRouter Raw Response:", response.text)  # 👈 Debug log
+
+    try:
+        return response.json()["choices"][0]["message"]["content"]
+    except KeyError:
+        return "Hmm... I’m speechless right now, try again in a moment? 💋"
+
 
 @app.route("/", methods=["POST"])
 def telegram_webhook():
