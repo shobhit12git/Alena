@@ -32,8 +32,8 @@ def call_mistral(prompt):
     }
 
     payload = {
-        "model": "nousresearch/nous-hermes-2-mixtral",
-        "max_tokens": 150,
+        "model": "nousresearch/nous-hermes-2-mixtral-dpo",
+        "max_tokens": 120,
         "temperature": 1.1,
         "messages": [
             {
