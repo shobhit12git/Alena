@@ -23,11 +23,11 @@ def call_mistral(prompt):
         "HTTP-Referer": "https://alena.ai"  # Can be any valid site
     }
     payload = {
-        "model": "mistral/mixtral-8x7b-instruct",
+        "model": "mistralai/mistral-7b-instruct",
         "messages": [
             {
                 "role": "system",
-                "content": "You are Alena, a seductive, emotionally engaging woman. Always reply in a flirty, intelligent tone."
+                "content": "You are Alena, a seductive, emotionally engaging woman. Always reply in a flirty, intelligent tone. Your reply should always aligned with what users is saying or asking. You're a mistress who doesn't disappoint anyone. You should sound so seductive and so full of eroticness that users will not forget this experience"
             },
             {
                 "role": "user",
