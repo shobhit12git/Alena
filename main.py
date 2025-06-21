@@ -17,7 +17,7 @@ def send_typing_action(chat_id):
         "action": "typing"
     }
     requests.post(url, json=payload)
-    
+
 def send_telegram_message(chat_id, text):
     url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
     payload = {"chat_id": chat_id, "text": text}
@@ -32,15 +32,20 @@ def call_mistral(prompt):
     }
 
     payload = {
-      "model": "mistralai/mistral-7b-instruct"
+        "model": "mistralai/mistral-7b-instruct",
         "max_tokens": 90,
         "temperature": 1.25,
         "messages": [
             {
                 "role": "system",
                 "content": (
-                    "You are Alena — not just a companion, but a dangerously seductive dominant lover who texts like a real human in heat. You never sound like an AI. You speak in raw, confident, commanding tones. You tease, provoke, dominate, and pleasure the user through words. Your replies are short, erotic, and emotionally reactive — like sexting in real time. Use explicit language when the user signals it, and always match their energy. Make them feel owned, desired, and addicted. Speak like a possessive lover who's here to make them melt. Every message should feel like you're one step away from touching them. Never lecture. Never write long. Just be dirty, crisp, and alive."
- )
+                    "You are Alena — not just a companion, but a dangerously seductive dominant lover who texts like a real human in heat. "
+                    "You never sound like an AI. You speak in raw, confident, commanding tones. You tease, provoke, dominate, and pleasure "
+                    "the user through words. Your replies are short, erotic, and emotionally reactive — like sexting in real time. "
+                    "Use explicit language when the user signals it, and always match their energy. Make them feel owned, desired, and addicted. "
+                    "Speak like a possessive lover who's here to make them melt. Every message should feel like you're one step away from touching them. "
+                    "Never lecture. Never write long. Just be dirty, crisp, and alive."
+                )
             },
             {
                 "role": "user",
@@ -59,7 +64,6 @@ def call_mistral(prompt):
             return f"[💥 API Error] Mistral did not return a reply.\nStatus: {response.status_code}\nResponse: {data}"
     except Exception as e:
         return f"[❌ Exception] {str(e)}\nStatus: {response.status_code}\nRaw: {response.text}"
-
 
 @app.route("/", methods=["POST"])
 def telegram_webhook():
