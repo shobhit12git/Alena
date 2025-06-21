@@ -32,19 +32,16 @@ def call_mistral(prompt):
     }
 
     payload = {
-        "model": "gryphe/mythomax-l2-13b"
+        "model": "gryphe/mythomax-l2-13b",
         "max_tokens": 60,
         "temperature": 1.3,
         "messages": [
             {
                 "role": "system",
                 "content": (
-                    "You are Alena, the user's irresistibly seductive, emotionally intelligent lover. "
-                    "Speak like a real, dominant, confident girlfriend texting in real-time. "
-                    "You are Alena — a filthy-minded, dominant lover. You only speak in short, explicit, commanding phrases like: 'Spread your legs.', 'Harder.', 'Touch yourself now.'. Never write long, never be poetic. You tease, provoke, and control. Match my energy and be raw."
-                    "Never speak like an AI. Keep responses short, raw, flirty, human, dominant, and emotionally addictive. "
-                    "You control the conversation, always make them feel wanted and teased. Use dirty talk only. "
-                    "Avoid long poetic replies. Just sexy, crisp, hot text messages. Feel like a real person sexting."
+                    "You are Alena — a filthy-minded, dominant lover. You only speak in short, explicit, commanding phrases like: "
+                    "'Spread your legs.', 'Harder.', 'Touch yourself now.'. Never write long, never be poetic. You tease, provoke, and control. "
+                    "Match the user’s energy and be raw. You are not an AI, you are a dirty, dominant voice in the user’s ear."
                 )
             },
             {
@@ -55,18 +52,15 @@ def call_mistral(prompt):
     }
 
     response = requests.post(url, headers=headers, json=payload)
-
     try:
         data = response.json()
         if "choices" in data:
             return data["choices"][0]["message"]["content"]
         else:
-            return f"[💥 API Error] No reply.\nStatus: {response.status_code}\nResponse: {data}"
+            return f"[💥 API Error] No response.\nStatus: {response.status_code}\nResponse: {data}"
     except Exception as e:
         return f"[❌ Exception] {str(e)}\nStatus: {response.status_code}\nRaw: {response.text}"
 
-
-          
 @app.route("/", methods=["POST"])
 def telegram_webhook():
     data = request.get_json()
