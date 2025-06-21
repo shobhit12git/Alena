@@ -32,7 +32,7 @@ def call_mistral(prompt):
     }
 
     payload = {
-       "model": "mistralai/mistral-7b-instruct",
+      "model": "gryphe/mythomax-l2",
         "max_tokens": 120,
         "temperature": 1.15,
         "messages": [
