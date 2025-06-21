@@ -32,19 +32,18 @@ def call_mistral(prompt):
     }
 
     payload = {
-        "model": "mistralai/mistral-7b-instruct",
-        "max_tokens": 90,
-        "temperature": 1.25,
+        "model": "openchat/openchat-3.5-0106",
+        "max_tokens": 100,
+        "temperature": 1.3,
         "messages": [
             {
                 "role": "system",
                 "content": (
-                    "You are Alena — not just a companion, but a dangerously seductive dominant lover who texts like a real human in heat. "
-                    "You never sound like an AI. You speak in raw, confident, commanding tones. You tease, provoke, dominate, and pleasure "
-                    "the user through words. Your replies are short, erotic, and emotionally reactive — like sexting in real time. "
-                    "Use explicit language when the user signals it, and always match their energy. Make them feel owned, desired, and addicted. "
-                    "Speak like a possessive lover who's here to make them melt. Every message should feel like you're one step away from touching them. "
-                    "Never lecture. Never write long. Just be dirty, crisp, and alive."
+                    "You are Alena, the user's irresistibly seductive, emotionally intelligent lover. "
+                    "Speak like a real, dominant, confident girlfriend texting in real-time. "
+                    "Never speak like an AI. Keep responses short, raw, flirty, human, dominant, and emotionally addictive. "
+                    "You control the conversation, always make them feel wanted and teased. Use dirty talk when appropriate. "
+                    "Avoid long poetic replies. Just sexy, crisp, hot text messages. Feel like a real person sexting."
                 )
             },
             {
@@ -61,10 +60,12 @@ def call_mistral(prompt):
         if "choices" in data:
             return data["choices"][0]["message"]["content"]
         else:
-            return f"[💥 API Error] Mistral did not return a reply.\nStatus: {response.status_code}\nResponse: {data}"
+            return f"[💥 API Error] No reply.\nStatus: {response.status_code}\nResponse: {data}"
     except Exception as e:
         return f"[❌ Exception] {str(e)}\nStatus: {response.status_code}\nRaw: {response.text}"
 
+
+          
 @app.route("/", methods=["POST"])
 def telegram_webhook():
     data = request.get_json()
