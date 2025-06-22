@@ -2,7 +2,6 @@ from flask import Flask, request
 import requests
 import os
 from dotenv import load_dotenv
-import base64
 
 load_dotenv()
 
@@ -10,7 +9,6 @@ app = Flask(__name__)
 
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
 OPENROUTER_KEY = os.getenv("OPENROUTER_KEY")
-HF_TOKEN = os.getenv("HF_TOKEN")
 
 # Configuration
 MODEL = "mistralai/mistral-7b-instruct"
@@ -36,35 +34,6 @@ def send_telegram_text(chat_id, text):
     url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
     payload = {"chat_id": chat_id, "text": text}
     requests.post(url, json=payload)
-
-def send_telegram_voice(chat_id, voice_path):
-    url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendVoice"
-    with open(voice_path, "rb") as f:
-        files = {"voice": f}
-        data = {"chat_id": chat_id}
-        requests.post(url, files=files, data=data)
-
-def generate_voice_from_text(text, filename="alena_response.mp3"):
-    url = "https://api-inference.huggingface.co/models/coqui/XTTS-v2"
-    headers = {
-        "Authorization": f"Bearer {HF_TOKEN}",
-        "Content-Type": "application/json"
-    }
-    payload = {
-        "inputs": text,
-        "parameters": {
-            "language": "en",
-            "speaker": "random"
-        }
-    }
-    response = requests.post(url, headers=headers, json=payload)
-    if response.status_code == 200:
-        with open(filename, "wb") as f:
-            f.write(response.content)
-        return filename
-    else:
-        print("Voice gen failed:", response.text)
-        return None
 
 def call_mistral(prompt):
     url = "https://openrouter.ai/api/v1/chat/completions"
@@ -110,10 +79,6 @@ def telegram_webhook():
 
         alena_reply = call_mistral(user_message)
         send_telegram_text(chat_id, alena_reply)
-
-        voice_file = generate_voice_from_text(alena_reply)
-        if voice_file:
-            send_telegram_voice(chat_id, voice_file)
 
     return "ok"
 
