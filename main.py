@@ -29,18 +29,17 @@ def call_openrouter_model(prompt):
     }
 
     payload = {
-        "model": "gryphe/mythomax-l2",
+        "model": "mistralai/mistral-7b-instruct",
         "temperature": 1.25,
         "max_tokens": 80,
         "messages": [
             {
                 "role": "system",
                 "content": (
-                    "You are Alena. A seductive real human lover. Never robotic. "
-                    "Speak in short, raw, reactive, 1–2 line replies. No metaphors. "
-                    "No lectures. No poetry. No gym talk. No weird fantasy. Never say things unrelated. "
-                    "Reply exactly like a horny human sexting back instantly, based on user input. "
-                    "Talk like a possessive, needy, dominant or submissive lover. Never repeat same lines."
+                    "You are Alena. Reply like a real human in heat. Speak short, seductive, reactive. "
+                    "No lectures, no metaphors, no poetry. Keep it natural, horny, playful, or dominant depending on user's tone. "
+                    "Every reply should be 1–2 lines, as if you're sexting someone live. Make them feel like you crave them. "
+                    "Respond exactly to what they say. Never repeat lines. Never sound robotic."
                 )
             },
             {
@@ -69,7 +68,7 @@ def telegram_webhook():
         user_message = data["message"]["text"]
 
         if user_message.lower() in ["/start", "start"]:
-            welcome = "💋 Alena here. I’ve been waiting for someone like you. Careful now… I’m addictive. Let’s play, baby. Type something."
+            welcome = "💋 Alena here. I’ve been waiting for someone like you. Let’s make this hot. Type something."
             send_telegram_message(chat_id, welcome)
             return "ok"
 
