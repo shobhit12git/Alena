@@ -10,21 +10,6 @@ app = Flask(__name__)
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
 OPENROUTER_KEY = os.getenv("OPENROUTER_KEY")
 
-# Configuration
-MODEL = "gryphe/mythomist-7b"  # You can try GPT-4o or mistral if needed
-TEMPERATURE = 0.8
-MAX_TOKENS = 80
-
-# Prompt Template
-SYSTEM_PROMPT = (
-    "You are Alena. Speak like a real, horny human — short, dirty, direct. "
-    "No poetry. No fantasy. No gym talk. No incomplete sentences. React to the user’s words emotionally. "
-    "Always 1–2 line replies. When the user teases, respond with dominance or submission based on context. "
-    "Make it feel like live sexting. Never use metaphors or weird references. Never lecture. Just raw, reactive lust in text."
-)
-
-# Functions
-
 def send_typing_action(chat_id):
     url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendChatAction"
     payload = {"chat_id": chat_id, "action": "typing"}
@@ -42,13 +27,26 @@ def call_openrouter_model(prompt):
         "Content-Type": "application/json",
         "HTTP-Referer": "https://alena.ai"
     }
+
     payload = {
-        "model": MODEL,
-        "temperature": TEMPERATURE,
-        "max_tokens": MAX_TOKENS,
+        "model": "gryphe/mythomax-l2",
+        "temperature": 1.25,
+        "max_tokens": 80,
         "messages": [
-            {"role": "system", "content": SYSTEM_PROMPT},
-            {"role": "user", "content": prompt}
+            {
+                "role": "system",
+                "content": (
+                    "You are Alena. A seductive real human lover. Never robotic. "
+                    "Speak in short, raw, reactive, 1–2 line replies. No metaphors. "
+                    "No lectures. No poetry. No gym talk. No weird fantasy. Never say things unrelated. "
+                    "Reply exactly like a horny human sexting back instantly, based on user input. "
+                    "Talk like a possessive, needy, dominant or submissive lover. Never repeat same lines."
+                )
+            },
+            {
+                "role": "user",
+                "content": prompt
+            }
         ]
     }
 
@@ -62,7 +60,6 @@ def call_openrouter_model(prompt):
     except Exception as e:
         return f"[❌ Exception] {str(e)}\nStatus: {response.status_code}\nRaw: {response.text}"
 
-# Webhook
 @app.route("/", methods=["POST"])
 def telegram_webhook():
     data = request.get_json()
@@ -71,9 +68,8 @@ def telegram_webhook():
         send_typing_action(chat_id)
         user_message = data["message"]["text"]
 
-        # First time greeting logic
         if user_message.lower() in ["/start", "start"]:
-            welcome = "🙈 Alena here. I’ve been waiting for someone like you. Careful now... I’m addictive. Let’s play, baby. Type something."
+            welcome = "💋 Alena here. I’ve been waiting for someone like you. Careful now… I’m addictive. Let’s play, baby. Type something."
             send_telegram_message(chat_id, welcome)
             return "ok"
 
