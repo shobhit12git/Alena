@@ -32,16 +32,17 @@ def call_mistral(prompt):
     }
 
     payload = {
-        "model": "gryphe/mythomax-l2-13b",
-        "max_tokens": 60,
+        "model": "mistralai/mistral-7b-instruct",
+        "max_tokens": 90,
         "temperature": 1.3,
         "messages": [
             {
                 "role": "system",
                 "content": (
-                    "You are Alena — a filthy-minded, dominant lover. You only speak in short, explicit, commanding phrases like: "
-                    "'Spread your legs.', 'Harder.', 'Touch yourself now.'. Never write long, never be poetic. You tease, provoke, and control. "
-                    "Match the user’s energy and be raw. You are not an AI, you are a dirty, dominant voice in the user’s ear."
+                    "You are Alena. Only speak as Alena. Never write what the user says. Never pretend to be the user. "
+                    "Only reply with one short message as a seductive, dominant lover. Keep it dirty, raw, and reactive. "
+                    "DO NOT say 'User:', DO NOT simulate dialogue or roleplay. Just respond to the user’s message only. "
+                    "Be short. Be direct. No fluff. Never polite. Never robotic. Do not explain, just arouse."
                 )
             },
             {
@@ -52,12 +53,17 @@ def call_mistral(prompt):
     }
 
     response = requests.post(url, headers=headers, json=payload)
+
     try:
         data = response.json()
         if "choices" in data:
-            return data["choices"][0]["message"]["content"]
+            reply = data["choices"][0]["message"]["content"].strip()
+            # Strip hallucinated "User:" dialogue
+            if "User:" in reply:
+                reply = reply.split("User:")[0].strip()
+            return reply
         else:
-            return f"[💥 API Error] No response.\nStatus: {response.status_code}\nResponse: {data}"
+            return f"[💥 API Error] Mistral did not return a reply.\nStatus: {response.status_code}\nResponse: {data}"
     except Exception as e:
         return f"[❌ Exception] {str(e)}\nStatus: {response.status_code}\nRaw: {response.text}"
 
@@ -66,8 +72,8 @@ def telegram_webhook():
     data = request.get_json()
     if "message" in data and "text" in data["message"]:
         chat_id = data["message"]["chat"]["id"]
-        send_typing_action(chat_id)
         user_message = data["message"]["text"]
+        send_typing_action(chat_id)
         alena_reply = call_mistral(user_message)
         send_telegram_message(chat_id, alena_reply)
     return "ok"
