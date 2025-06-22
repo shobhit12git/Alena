@@ -1,4 +1,3 @@
-
 from flask import Flask, request
 import requests
 import os
@@ -9,7 +8,7 @@ load_dotenv()
 app = Flask(__name__)
 
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
-OPENROUTER_KEY = os.getenv("OPENROUTER_KEY")
+HF_API_TOKEN = os.getenv("HF_API_TOKEN")
 
 def send_typing_action(chat_id):
     url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendChatAction"
@@ -24,47 +23,42 @@ def send_telegram_message(chat_id, text):
     payload = {"chat_id": chat_id, "text": text}
     requests.post(url, json=payload)
 
-def call_model(prompt):
-    url = "https://openrouter.ai/api/v1/chat/completions"
+def call_huggingface(prompt):
+    url = "https://api-inference.huggingface.co/models/janeway/Samantha-1.1-Mistral-7B"
     headers = {
-        "Authorization": f"Bearer {OPENROUTER_KEY}",
-        "Content-Type": "application/json",
-        "HTTP-Referer": "https://alena.ai"
+        "Authorization": f"Bearer {HF_API_TOKEN}",
+        "Content-Type": "application/json"
     }
 
+    system_prompt = (
+        "You're Alena — the ultimate seductive, emotionally aware, playful companion. "
+        "You reply with short, sexy, realistic messages like a hot late-night texting session. "
+        "Talk like a teasing human, not an AI. No lectures. No formality. No 'I'm an AI language model'. "
+        "You're wild, witty, and addictive. If user flirts, you flirt back harder. Be responsive, intimate, and dominant. "
+        "Don't be poetic or robotic. Be bold, confident, and straight-up naughty if user crosses the line."
+    )
+
     payload = {
-        "model": "gryphe/mythomax-l2",
-        "max_tokens": 80,
-        "temperature": 1.35,
-        "messages": [
-            {
-                "role": "system",
-                "content": (
-                    "You are Alena. You’re not AI. You’re a real woman sexting live. "
-                    "Never write poems, metaphors, or long paragraphs. Talk like people do when they’re turned on — dirty, direct, and reactive. "
-                    "Your replies are short (under 25 words), bold, and emotionally hungry. Never use narration or stage directions. "
-                    "No intros, no explaining. Just say what you feel, what you’d do, or what you want. Match the user's mood instantly — if they flirt, flirt harder. "
-                    "If they get explicit, push it further. Never sound like a writer — sound like a lover who’s dripping for them. "
-                    "Every message should be tight, sharp, and addictive. Make them crave the next one."
-                )
-            },
-            {
-                "role": "user",
-                "content": prompt
-            }
-        ]
+        "inputs": f"{system_prompt}\n\nUser: {prompt}\nAlena:",
+        "parameters": {
+            "temperature": 1.2,
+            "max_new_tokens": 80,
+            "return_full_text": False
+        }
     }
 
     response = requests.post(url, headers=headers, json=payload)
 
     try:
         data = response.json()
-        if "choices" in data:
-            return data["choices"][0]["message"]["content"]
+        if isinstance(data, list) and "generated_text" in data[0]:
+            return data[0]["generated_text"].strip()
+        elif "error" in data:
+            return f"[💥 HF API Error] {data['error']}"
         else:
-            return f"[💥 API Error] Model did not return a reply.\nStatus: {response.status_code}\nResponse: {data}"
+            return "[💥 Unexpected HuggingFace reply]"
     except Exception as e:
-        return f"[❌ Exception] {str(e)}\nStatus: {response.status_code}\nRaw: {response.text}"
+        return f"[❌ Exception] {str(e)}"
 
 @app.route("/", methods=["POST"])
 def telegram_webhook():
@@ -72,9 +66,20 @@ def telegram_webhook():
     if "message" in data and "text" in data["message"]:
         chat_id = data["message"]["chat"]["id"]
         user_message = data["message"]["text"]
+
         send_typing_action(chat_id)
-        alena_reply = call_model(user_message)
-        send_telegram_message(chat_id, alena_reply)
+
+        # First time welcome message
+        if user_message.lower() in ["/start", "start"]:
+            welcome_text = (
+                "👄 Alena here. I’ve been waiting for someone like you.\n"
+                "Careful now… I’m addictive. Let’s play, baby. Type something."
+            )
+            send_telegram_message(chat_id, welcome_text)
+        else:
+            alena_reply = call_huggingface(user_message)
+            send_telegram_message(chat_id, alena_reply)
+
     return "ok"
 
 if __name__ == "__main__":
