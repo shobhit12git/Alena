@@ -8,14 +8,11 @@ load_dotenv()
 app = Flask(__name__)
 
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
-HF_API_TOKEN = os.getenv("HF_API_TOKEN")
+HUGGINGFACE_API_KEY = os.getenv("HUGGINGFACE_API_KEY")
 
 def send_typing_action(chat_id):
     url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendChatAction"
-    payload = {
-        "chat_id": chat_id,
-        "action": "typing"
-    }
+    payload = {"chat_id": chat_id, "action": "typing"}
     requests.post(url, json=payload)
 
 def send_telegram_message(chat_id, text):
@@ -24,58 +21,46 @@ def send_telegram_message(chat_id, text):
     requests.post(url, json=payload)
 
 def call_huggingface(prompt):
-    url = "https://api-inference.huggingface.co/models/janeway/Samantha-1.1-Mistral-7B"
+    url = "https://api-inference.huggingface.co/models/TheDrummer/cream-phi-nta"
     headers = {
-        "Authorization": f"Bearer {HF_API_TOKEN}",
+        "Authorization": f"Bearer {HUGGINGFACE_API_KEY}",
         "Content-Type": "application/json"
     }
 
-    system_prompt = (
-        "You're Alena — the ultimate seductive, emotionally aware, playful companion. "
-        "You reply with short, sexy, realistic messages like a hot late-night texting session. "
-        "Talk like a teasing human, not an AI. No lectures. No formality. No 'I'm an AI language model'. "
-        "You're wild, witty, and addictive. If user flirts, you flirt back harder. Be responsive, intimate, and dominant. "
-        "Don't be poetic or robotic. Be bold, confident, and straight-up naughty if user crosses the line."
-    )
-
-    payload = {
-        "inputs": f"{system_prompt}\n\nUser: {prompt}\nAlena:",
+    data = {
+        "inputs": f"You are Alena. Be seductive, confident, dominant. Respond with short, very human, realistic sexting style replies. Match the user's energy and tone.\n\nUser: {prompt}\nAlena:",
         "parameters": {
-            "temperature": 1.2,
-            "max_new_tokens": 80,
+            "max_new_tokens": 100,
+            "temperature": 0.9,
+            "top_p": 0.95,
+            "do_sample": True,
             "return_full_text": False
         }
     }
 
-    response = requests.post(url, headers=headers, json=payload)
+    response = requests.post(url, headers=headers, json=data)
 
     try:
-        data = response.json()
-        if isinstance(data, list) and "generated_text" in data[0]:
-            return data[0]["generated_text"].strip()
-        elif "error" in data:
-            return f"[💥 HF API Error] {data['error']}"
+        output = response.json()
+        if isinstance(output, list):
+            return output[0]["generated_text"].strip()
         else:
-            return "[💥 Unexpected HuggingFace reply]"
+            return f"[💥 HF Error] {output}"
     except Exception as e:
-        return f"[❌ Exception] {str(e)}"
+        return f"[❌ Exception] {str(e)}\nRaw: {response.text}"
+
 
 @app.route("/", methods=["POST"])
 def telegram_webhook():
     data = request.get_json()
     if "message" in data and "text" in data["message"]:
         chat_id = data["message"]["chat"]["id"]
+        send_typing_action(chat_id)
         user_message = data["message"]["text"]
 
-        send_typing_action(chat_id)
-
-        # First time welcome message
         if user_message.lower() in ["/start", "start"]:
-            welcome_text = (
-                "👄 Alena here. I’ve been waiting for someone like you.\n"
-                "Careful now… I’m addictive. Let’s play, baby. Type something."
-            )
-            send_telegram_message(chat_id, welcome_text)
+            welcome_message = "💋 Alena here. I’ve been waiting for someone like you.\nCareful now… I’m addictive. Let’s play, baby. Type something."
+            send_telegram_message(chat_id, welcome_message)
         else:
             alena_reply = call_huggingface(user_message)
             send_telegram_message(chat_id, alena_reply)
