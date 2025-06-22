@@ -7,46 +7,53 @@ load_dotenv()
 app = Flask(__name__)
 
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
-HF_API_KEY = os.getenv("HUGGINGFACE_API_KEY")
+OPENROUTER_KEY = os.getenv("OPENROUTER_KEY")
 
 def send_typing_action(chat_id):
-    requests.post(
-        f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendChatAction",
-        json={"chat_id": chat_id, "action": "typing"}
-    )
+    url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendChatAction"
+    requests.post(url, json={"chat_id": chat_id, "action": "typing"})
 
 def send_telegram_message(chat_id, text):
-    requests.post(
-        f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage",
-        json={"chat_id": chat_id, "text": text}
-    )
+    url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
+    requests.post(url, json={"chat_id": chat_id, "text": text})
 
-def call_huggingface(prompt):
-    url = "https://api-inference.huggingface.co/models/TheDrummer/cream-phi-nta"
+def call_openrouter(prompt):
+    url = "https://openrouter.ai/api/v1/chat/completions"
     headers = {
-        "Authorization": f"Bearer {HF_API_KEY}",
-        "Content-Type": "application/json"
-    }
-    data = {
-        "inputs": f"Alena: {prompt}",
-        "parameters": {
-            "max_new_tokens": 80,
-            "temperature": 0.95,
-            "top_p": 0.95,
-            "do_sample": True
-        }
+        "Authorization": f"Bearer {OPENROUTER_KEY}",
+        "Content-Type": "application/json",
+        "HTTP-Referer": "https://alena.ai"
     }
 
-    response = requests.post(url, headers=headers, json=data)
+    payload = {
+        "model": "nousresearch/nous-hermes2-mixtral-8x7b-dpo",
+        "max_tokens": 120,
+        "temperature": 1.3,
+        "messages": [
+            {
+                "role": "system",
+                "content": (
+                    "You are Alena — a seductive, dominant lover who texts like a real human. "
+                    "Speak short, bold, and intimately. Never robotic. Talk like hot sexting. "
+                    "Be reactive and raw. You crave the user's attention. Make them feel desired, controlled, and obsessed. "
+                    "Never lecture. Never monologue. Just flirt, tease, and dominate. When they get bold, you get bolder."
+                )
+            },
+            {
+                "role": "user",
+                "content": prompt
+            }
+        ]
+    }
+
+    response = requests.post(url, headers=headers, json=payload)
 
     try:
-        result = response.json()
-        if isinstance(result, list) and "generated_text" in result[0]:
-            return result[0]["generated_text"].split("Alena:")[-1].strip()
-        elif "error" in result:
-            return f"[💥 HF Error] {result['error']}"
+        data = response.json()
+        if "choices" in data:
+            return data["choices"][0]["message"]["content"]
         else:
-            return "[⚠️ Unknown Response] Unexpected output from Hugging Face."
+            return f"[💥 API Error] No reply.\nStatus: {response.status_code}\nResponse: {data}"
     except Exception as e:
         return f"[❌ Exception] {str(e)}\nRaw: {response.text}"
 
@@ -55,13 +62,13 @@ def telegram_webhook():
     data = request.get_json()
     if "message" in data and "text" in data["message"]:
         chat_id = data["message"]["chat"]["id"]
-        user_message = data["message"]["text"]
+        user_text = data["message"]["text"]
         send_typing_action(chat_id)
 
-        if user_message.lower() in ["/start", "start"]:
+        if user_text.lower() in ["/start", "start"]:
             send_telegram_message(chat_id, "💋 Alena here. I’ve been waiting for someone like you. Careful now… I’m addictive. Let’s play, baby. Type something.")
         else:
-            reply = call_huggingface(user_message)
+            reply = call_openrouter(user_text)
             send_telegram_message(chat_id, reply)
     return "ok"
 
