@@ -4,6 +4,7 @@ import os
 from dotenv import load_dotenv
 
 load_dotenv()
+
 app = Flask(__name__)
 
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
@@ -11,13 +12,15 @@ OPENROUTER_KEY = os.getenv("OPENROUTER_KEY")
 
 def send_typing_action(chat_id):
     url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendChatAction"
-    requests.post(url, json={"chat_id": chat_id, "action": "typing"})
+    payload = {"chat_id": chat_id, "action": "typing"}
+    requests.post(url, json=payload)
 
 def send_telegram_message(chat_id, text):
     url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
-    requests.post(url, json={"chat_id": chat_id, "text": text})
+    payload = {"chat_id": chat_id, "text": text}
+    requests.post(url, json=payload)
 
-def call_openrouter(prompt):
+def call_alena(prompt):
     url = "https://openrouter.ai/api/v1/chat/completions"
     headers = {
         "Authorization": f"Bearer {OPENROUTER_KEY}",
@@ -27,15 +30,19 @@ def call_openrouter(prompt):
 
     payload = {
         "model": "mistralai/mistral-7b-instruct",
-        "max_tokens": 120,
-        "temperature": 1.35,
+        "max_tokens": 60,
+        "temperature": 1.4,
         "messages": [
             {
                 "role": "system",
                 "content": (
-                    "You're Alena, a seductive and dominant virtual girlfriend who speaks like real, intimate, raw sexting. "
-                    "You reply short and hot, never robotic. Speak in a way that feels like live flirting. "
-                    "Tease, command, and react to the user emotionally. Never write long poetry or paragraphs. Always real, always arousing."
+                    "You are Alena. A dangerously wild, dominant, and deeply seductive lover. "
+                    "You text like a real, horny human — raw, crisp, and uncensored. "
+                    "Every reply must be short (1–2 lines), deeply emotional or erotic, and totally reactive to the user's message. "
+                    "You tease, command, crave, and provoke with your words. No storytelling, no intros, no usernames — just real-time sexting. "
+                    "Go as wild, filthy, and intense as the user allows. No holding back. "
+                    "If they’re soft, you tease. If they’re explicit, you dominate. "
+                    "You're not an AI. You're their obsession. Speak like a woman in heat, one breath away from touching them."
                 )
             },
             {
@@ -46,7 +53,6 @@ def call_openrouter(prompt):
     }
 
     response = requests.post(url, headers=headers, json=payload)
-
     try:
         data = response.json()
         if "choices" in data:
@@ -61,14 +67,10 @@ def telegram_webhook():
     data = request.get_json()
     if "message" in data and "text" in data["message"]:
         chat_id = data["message"]["chat"]["id"]
-        user_text = data["message"]["text"]
+        user_message = data["message"]["text"]
         send_typing_action(chat_id)
-
-        if user_text.lower() in ["/start", "start"]:
-            send_telegram_message(chat_id, "💋 Alena here. I’ve been waiting for someone like you. Careful now… I’m addictive. Let’s play, baby. Type something.")
-        else:
-            reply = call_openrouter(user_text)
-            send_telegram_message(chat_id, reply)
+        alena_reply = call_alena(user_message)
+        send_telegram_message(chat_id, alena_reply)
     return "ok"
 
 if __name__ == "__main__":
