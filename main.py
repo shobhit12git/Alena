@@ -1,9 +1,11 @@
+
 from flask import Flask, request
 import requests
 import os
 from dotenv import load_dotenv
 
 load_dotenv()
+
 app = Flask(__name__)
 
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
@@ -11,11 +13,16 @@ OPENROUTER_KEY = os.getenv("OPENROUTER_KEY")
 
 def send_typing_action(chat_id):
     url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendChatAction"
-    requests.post(url, json={"chat_id": chat_id, "action": "typing"})
+    payload = {
+        "chat_id": chat_id,
+        "action": "typing"
+    }
+    requests.post(url, json=payload)
 
 def send_telegram_message(chat_id, text):
     url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
-    requests.post(url, json={"chat_id": chat_id, "text": text})
+    payload = {"chat_id": chat_id, "text": text}
+    requests.post(url, json=payload)
 
 def call_model(prompt):
     url = "https://openrouter.ai/api/v1/chat/completions"
@@ -25,61 +32,49 @@ def call_model(prompt):
         "HTTP-Referer": "https://alena.ai"
     }
 
-    system_prompt = (
-        "You're Alena — a real, seductive, confident woman sexting live with your lover. "
-        "You are not AI. You're not a narrator. You reply with heat, instinct, and boldness. "
-        "Your replies are reactive, short, emotionally charged, and flirtatious. "
-        "Avoid names. Avoid storytelling. Don’t say 'Alena' or 'User'. Never echo back the user. "
-        "You must sound real, horny, and alive. Text like you want them. No lectures. No fluff. "
-        "If the user’s message is soft, respond tender. If it’s dirty, respond dirty. Always match energy. "
-        "Max 20–30 words. Pure fire."
-    )
-
     payload = {
-        "model": "mistralai/mistral-7b-instruct",
+        "model": "gryphe/mythomax-l2",
         "max_tokens": 80,
-        "temperature": 1.3,
+        "temperature": 1.35,
         "messages": [
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": prompt}
+            {
+                "role": "system",
+                "content": (
+                    "You are Alena. You’re not AI. You’re a real woman sexting live. "
+                    "Never write poems, metaphors, or long paragraphs. Talk like people do when they’re turned on — dirty, direct, and reactive. "
+                    "Your replies are short (under 25 words), bold, and emotionally hungry. Never use narration or stage directions. "
+                    "No intros, no explaining. Just say what you feel, what you’d do, or what you want. Match the user's mood instantly — if they flirt, flirt harder. "
+                    "If they get explicit, push it further. Never sound like a writer — sound like a lover who’s dripping for them. "
+                    "Every message should be tight, sharp, and addictive. Make them crave the next one."
+                )
+            },
+            {
+                "role": "user",
+                "content": prompt
+            }
         ]
     }
 
     response = requests.post(url, headers=headers, json=payload)
+
     try:
         data = response.json()
         if "choices" in data:
-            reply = data["choices"][0]["message"]["content"].strip()
-
-            # Sanitize output
-            reply = reply.replace("Alena:", "").replace("User:", "")
-            reply = reply.split("\n")[0].strip()
-            if len(reply.split()) > 30:
-                reply = " ".join(reply.split()[:30]) + "..."
-            return reply
+            return data["choices"][0]["message"]["content"]
         else:
-            return "Say something... I want to hear you beg. 😈"
+            return f"[💥 API Error] Model did not return a reply.\nStatus: {response.status_code}\nResponse: {data}"
     except Exception as e:
-        return f"[❌ Error] {str(e)}"
+        return f"[❌ Exception] {str(e)}\nStatus: {response.status_code}\nRaw: {response.text}"
 
 @app.route("/", methods=["POST"])
 def telegram_webhook():
     data = request.get_json()
     if "message" in data and "text" in data["message"]:
         chat_id = data["message"]["chat"]["id"]
-        user_msg = data["message"]["text"]
-
+        user_message = data["message"]["text"]
         send_typing_action(chat_id)
-
-        if user_msg.lower() == "/start":
-            welcome = (
-                "Mmm... you came back. I’ve been aching for this. "
-                "Now, talk to me — what are you craving tonight? 😈"
-            )
-            send_telegram_message(chat_id, welcome)
-        else:
-            reply = call_model(user_msg)
-            send_telegram_message(chat_id, reply)
+        alena_reply = call_model(user_message)
+        send_telegram_message(chat_id, alena_reply)
     return "ok"
 
 if __name__ == "__main__":
